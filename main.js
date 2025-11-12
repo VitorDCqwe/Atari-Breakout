@@ -9,6 +9,7 @@ let spacing = 5;
 let score = 0;
 let lives = 3;
 let gamestate = "serve";
+let maxSpeed = 12;
 
 
 function setup() {
@@ -62,6 +63,10 @@ function draw() {
         if ( ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w &&
              ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
                 ball.vy *= -1;
+                ball.vx *= 1.05;
+                ball.vy *= 1.05;
+                ball.vx = constrain(ball.vx, -maxSpeed, maxSpeed);
+                ball.vy = constrain(ball.vy, -maxSpeed, maxSpeed);
                 score += 5
                 bricks.splice(i, 1);
                 break;
@@ -72,11 +77,65 @@ function draw() {
     text("Score: " +score, 20, 20);
     text("Livex: " + lives, 20, 40);
     text("clique para lançar a bola", width/2 -100, height/2);
+    if (gameState === "serve") {
+        textSize(18);
+        text("Clique para lançar a bola", width/2 - 100, height/2);
+        ball.x = width/2;
+        ball.y = height - 36;
+        ball.vx = 0;
+        ball.vy = 0;
+    }
+    
+    if(gameState === "play") {
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+        if(ball.x - ball.r < 0 || ball.x + ball.r > width) ball.vx *= -1;
+        if(ball.y - ball.r < 0) ball.vy *= -1;
+
+        if (ball.y + ball.r > paddle.y - paddle.h/2 &&
+            ball.y + ball.r < paddle.y + paddle.h/2 &&
+            ball.x > paddle.x - paddle.w/2 &&
+            ball.x < paddle.x + paddle.w/2) {
+                ball.vy *= -1;
+                let diff = ball.x - paddle.x;
+                ball.vx = diff * 0.1;
+            }
+        for (let i = bricks.length - 1; i >= 0; i --) {
+            let b = bricks[i];
+            if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w &&
+                ball.y + ball.r > b.y && ball.x - ball.r < b.y + b.h) {
+                    ball.vy *= -1;
+                    score += 5; bricks.splice(i, 1);
+                    break;
+                }
+        }
+        if (ball.y - ball.r > height) {
+            lives--;
+            if (lives > 0) {
+                gameState = "serve";
+            } else {
+                gameState = "over";
+            }
+        }
+        if (gameState === "over") {
+            textSize(24);
+            text("Game Over!", width/2 - 70, height/2);
+        }
+        if (bricks.length === 0 && gameState === "play") {
+            textSize(24);
+            text("Parabéns! Você venceu!", width/2 - 120, height/2);
+            ball.vx = 0;
+            ball.vy = 0;
+            gameState = "end";
+        }
+    }
 }
 
 function mousePressed() {
     ball.vx = random(-4, 4);
     ball.vy = -5;
+    gameState = "play";
 }
 
 function creatBriks() {
